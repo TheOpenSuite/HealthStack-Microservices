@@ -8,24 +8,25 @@
 Welcome to this open-source project showcasing a modern, scalable, and resilient microservices architecture for healthcare operations. This project refactors a traditional monolithic application into independent, role-based services, each with its own dedicated interface.
 
 ## Table of Contents
-- [Key Features & Architecture](#-key-features--architecture)
+- [Key Features & Architecture](#key-features--architecture)
   - [Core HMIS Modules](#core-hmis-modules)
   - [New Enhancements](#new-enhancements)
-- [DevOps & DevSecOps](#️-devops--devsecops)
+- [DevOps & DevSecOps](#️devops--devsecops)
   - [1. Containerization with Docker 🐳](#1-containerization-with-docker-)
   - [2. CI/CD with GitHub Actions ](#2-cicd-with-github-actions-️)
   - [3. Infrastructure as Code (IaC) with Terraform ](#3-infrastructure-as-code-iac-with-terraform-️)
   - [4. Configuration Management with Ansible ](#4-configuration-management-with-ansible-)
   - [5. Orchestration with Kubernetes ](#5-orchestration-with-kubernetes-️)
-- [ Getting Started](#-getting-started)
+  - [6. Alternative: Running Without Kubernetes](#6-alternative-running-without-kubernetes)
+- [ Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Step 1: Set Up the Local Virtual Machine](#step-1-set-up-the-local-virtual-machine)
   - [Step 2: Access the Services](#step-2-access-the-services)
     - [Option A: Port Forwarding (Recommended)](#option-a-port-forwarding-recommended)
     - [Option B: Reverse SSH Tunnel](#option-b-reverse-ssh-tunnel)
   - [Step 3: Deploy to the Kubernetes Cluster](#step-3-deploy-to-the-kubernetes-cluster)
-- [Credentials](#-credentials)
-- [Credits](#-credits)
+- [Credentials](#credentials)
+- [Credits](#credits)
 
 
 ---
@@ -164,7 +165,3 @@ Admin Module Password: admin
 
 ## **Credits** 
 The core framework and initial UI was designed by [MartMbithi](https://github.com/MartMbithi).
-
-
-
-
