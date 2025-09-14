@@ -81,6 +81,18 @@ The *kubernetes/* directory contains all the manifests required for deployment.
 * **Persistence**: *db-pvc.yaml* ensures the database has a Persistent Volume Claim, so data is not lost on pod restarts.
 * **Secrets**: *hmis-secrets.yaml* securely stores sensitive information like database credentials.
 
+### 6. **Alternative: Running Without Kubernetes**
+
+For users who want to run the project without a full Kubernetes cluster, a dedicated folder named *no-kubernetes-build* is provided. This setup uses a simple Docker Compose file to orchestrate the services, an Nginx gateway for routing, and its own CI/CD pipeline and Ansible playbook. This is ideal for quick local development and testing.
+
+* **Simplified Orchestration**: Uses a single *docker-compose.yml* file to manage all microservices, databases, and the Nginx gateway.
+* **Lightweight CI/CD**: The *ci-cd.yml* pipeline is streamlined for a Docker-only deployment, focusing on building images and pushing them to a registry.
+* **Ansible Playbook**: The *playbook.yml* is configured to pull the latest Docker images and start the services using Docker Compose on a target host.
+* **Nginx Gateway**: Acts as a reverse proxy, routing traffic to the correct microservice based on the URL path, mimicking the functionality of a Kubernetes Ingress.
+
+To use You'd need to place them in the root folder, replace the current *ci-cd.yml* with the one inside the folder. Same goes with the *playbook.yml*.
+A folder called Terraform is inside the folder, this could be ignored as the 3 folders inside the current project are almost identical to the task they're achieving.
+
 ---
 
 ##  Getting Started
