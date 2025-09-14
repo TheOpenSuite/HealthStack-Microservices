@@ -57,14 +57,14 @@ This project is also a practical demonstration of a full DevOps pipeline, levera
 Every microservice is packaged into its own Docker container. This ensures consistency and portability across development, testing, and production environments. Each service's directory includes a *Dockerfile* that defines its build process.
 
 ### 2. **CI/CD with GitHub Actions**
-The *ci-cd.yml *workflow automates the entire process.
+The *ci-cd.yml* workflow automates the entire process.
 
 * **Static Analysis**: The pipeline starts with a *pre_build_security_scan* using TruffleHog to scan for secrets and sensitive data before the build even begins.
-* **Build & Scan**: The *build_and_scan_images*  job builds each service's Docker image, pushes it to Docker Hub, and then uses **Trivy** to scan for vulnerabilities. The build automatically fails if any high-severity issues are detected.
+* **Build & Scan**: The *build_and_scan_images*  job builds each service's Docker image, pushes it to Docker Hub, and then uses Trivy to scan for vulnerabilities. The build automatically fails if any high-severity issues are detected.
 * **Automated Deployment**: A *deploy* job is configured to automatically trigger a deployment to our Kubernetes cluster using Ansible upon a successful build and scan.
 
 ### 3. **Infrastructure as Code (IaC) with Terraform**
-The* terraform/* directory contains scripts to provision a local virtual machine using the Libvirt provider.
+The *terraform/* directory contains scripts to provision a local virtual machine using the Libvirt provider.
 
 ### 4. **Configuration Management with Ansible**
 The *ansible/playbook.yml* automates the setup and deployment to the VM.
@@ -165,3 +165,4 @@ Admin Module Password: admin
 
 ## **Credits** 
 The core framework and initial UI was designed by [MartMbithi](https://github.com/MartMbithi).
+
