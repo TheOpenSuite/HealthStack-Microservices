@@ -53,24 +53,24 @@ This project is also a practical demonstration of a full DevOps pipeline, levera
 ### 1. **Containerization with Docker 🐳**
 Every microservice is packaged into its own Docker container. This ensures consistency and portability across development, testing, and production environments. Each service's directory includes a *Dockerfile* that defines its build process.
 
-### 2. **CI/CD with GitHub Actions **
+### 2. **CI/CD with GitHub Actions**
 The *ci-cd.yml *workflow automates the entire process.
 
 * **Static Analysis**: The pipeline starts with a *pre_build_security_scan* using TruffleHog to scan for secrets and sensitive data before the build even begins.
 * **Build & Scan**: The *build_and_scan_images*  job builds each service's Docker image, pushes it to Docker Hub, and then uses **Trivy** to scan for vulnerabilities. The build automatically fails if any high-severity issues are detected.
 * **Automated Deployment**: A *deploy* job is configured to automatically trigger a deployment to our Kubernetes cluster using Ansible upon a successful build and scan.
 
-### 3. **Infrastructure as Code (IaC) with Terraform **
+### 3. **Infrastructure as Code (IaC) with Terraform**
 The* terraform/* directory contains scripts to provision a local virtual machine using the Libvirt provider.
 
-### 4. **Configuration Management with Ansible **
+### 4. **Configuration Management with Ansible**
 The *ansible/playbook.yml* automates the setup and deployment to the VM.
 
 * **Installation**: It checks for and installs **k3s**, a lightweight Kubernetes distribution.
 * **Deployment**: It applies all Kubernetes manifest files to the cluster.
 * **Rolling Updates**: It uses the *community.kubernetes.k8s* module to patch existing deployments with the new Docker image tag, ensuring zero-downtime updates.
 
-### 5. **Orchestration with Kubernetes **
+### 5. **Orchestration with Kubernetes**
 The *kubernetes/* directory contains all the manifests required for deployment.
 
 * **Deployments**: **-deployment.yaml* files define the desired state for each microservice, including replica counts and container images.
@@ -121,9 +121,9 @@ Follow these steps to get the HMIS up and running on your local machine.
 ### **Step 2: Access the Services**
 You have two options to access the services running inside the VM from your host machine.
 
-#### **Option A: Port Forwarding **
-1.  Modify your VM's network settings to forward traffic from your host's port 80 to the VM's port 80. This can be done via the Libvirt GUI (`virt-manager`).
-2.  Add a line to your host's `/etc/hosts` file to resolve the domain:
+#### **Option A: Port Forwarding**
+1.  Modify your VM's network settings to forward traffic from your host's port 80 to the VM's port 80. This can be done via the Libvirt GUI (virt-manager).
+2.  Add a line to your host's */etc/hosts* file to resolve the domain:
     ```bash
     sudo vim /etc/hosts
     # Add this line
