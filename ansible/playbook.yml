@@ -1,0 +1,169 @@
+---
+# This Ansible playbook installs a Kubernetes cluster (k3s), deploys the HMIS application,
+# and updates the container images to the latest version built by the CI pipeline.
+
+- name: Deploy HMIS to Kubernetes
+  hosts: all
+  become: yes
+  vars:
+    # These variables are passed from the GitHub Actions workflow
+    image_tag: "latest"
+    docker_username: "theopensuite"
+    k8s_manifest_dir: "/tmp/hmis-k8s-manifests"
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Check if k3s is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_binary
+
+    - name: Install k3s (Lightweight Kubernetes)
+      ansible.builtin.shell: "curl -sfL https://get.k3s.io | sh -"
+      when: not k3s_binary.stat.exists
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Ensure community.kubernetes collection is installed
+      ansible.builtin.command: "ansible-galaxy collection install community.kubernetes"
+      run_once: true
+      delegate_to: localhost
+      changed_when: false
+
+    - name: Wait for k3s node to be ready
+      community.kubernetes.k8s_info:
+        api_version: v1
+        kind: Node
+        name: "{{ inventory_hostname }}"
+        state: present
+      register: node_status
+      retries: 30
+      delay: 5
+      until: "node_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0"
+
+    - name: Create directory for Kubernetes manifests
+      ansible.builtin.file:
+        path: "{{ k8s_manifest_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy Kubernetes manifests to the server
+      ansible.builtin.copy:
+        src: ../kubernetes/
+        dest: "{{ k8s_manifest_dir }}/"
+
+    - name: Apply all base Kubernetes manifests (Services, PVC, Secrets, Ingress)
+      ansible.builtin.command: "k3s kubectl apply -f {{ k8s_manifest_dir }}"
+      changed_when: true
+
+    - name: Wait for DB deployment to be ready before proceeding
+      community.kubernetes.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: db-deployment
+        namespace: default
+      register: db_deployment_status
+      retries: 30
+      delay: 10
+      until: "db_deployment_status.resources[0].status.readyReplicas is defined and db_deployment_status.resources[0].status.readyReplicas == db_deployment_status.resources[0].spec.replicas"
+
+    - name: Update Admin Service deployment image
+      community.kubernetes.k8s:
+        state: patched
+        api_version: apps/v1
+        kind: Deployment
+        name: admin-service-deployment
+        namespace: default
+        definition:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: admin-service
+                    image: "{{ docker_username }}/hmis-admin-service:{{ image_tag }}"
+
+    - name: Update Auth Service deployment image
+      community.kubernetes.k8s:
+        state: patched
+        api_version: apps/v1
+        kind: Deployment
+        name: auth-service-deployment
+        namespace: default
+        definition:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: auth-service
+                    image: "{{ docker_username }}/hmis-auth-service:{{ image_tag }}"
+
+    - name: Update Doc Service deployment image
+      community.kubernetes.k8s:
+        state: patched
+        api_version: apps/v1
+        kind: Deployment
+        name: doc-service-deployment
+        namespace: default
+        definition:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: doc-service
+                    image: "{{ docker_username }}/hmis-doc-service:{{ image_tag }}"
+
+    - name: Update Pharmacy Service deployment image
+      community.kubernetes.k8s:
+        state: patched
+        api_version: apps/v1
+        kind: Deployment
+        name: pharmacy-service-deployment
+        namespace: default
+        definition:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: pharmacy-service
+                    image: "{{ docker_username }}/hmis-pharmacy-service:{{ image_tag }}"
+
+    - name: Update Reception Service deployment image
+      community.kubernetes.k8s:
+        state: patched
+        api_version: apps/v1
+        kind: Deployment
+        name: reception-service-deployment
+        namespace: default
+        definition:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: reception-service
+                    image: "{{ docker_username }}/hmis-reception-service:{{ image_tag }}"
+
+    - name: Verify admin deployment rollout status
+      community.kubernetes.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: admin-service-deployment
+        namespace: default
+      register: admin_deployment_status
+      retries: 20
+      delay: 10
+      until: "admin_deployment_status.resources[0].status.readyReplicas is defined and admin_deployment_status.resources[0].status.readyReplicas == admin_deployment_status.resources[0].spec.replicas"
+
+    - name: Verify auth deployment rollout status
+      community.kubernetes.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: auth-service-deployment
+        namespace: default
+      register: auth_deployment_status
+      retries: 20
+      delay: 10
+      until: "auth_deployment_status.resources[0].status.readyReplicas is defined and auth_deployment_status.resources[0].status.readyReplicas == auth_deployment_status.resources[0].spec.replicas"

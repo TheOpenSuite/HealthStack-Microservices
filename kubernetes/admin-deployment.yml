@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-service-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: admin-service
+  template:
+    metadata:
+      labels:
+        app: admin-service
+    spec:
+      containers:
+      - name: admin-service
+        image: "${DOCKER_USERNAME}/hmis-admin-service:${DOCKER_TAG:-latest}"
+        imagePullPolicy: Always 
+        env:
+        - name: DB_HOST
+          value: db-service # This will be the name of your DB service in K8s
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: hmis-secrets
+              key: db_user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hmis-secrets
+              key: db_password
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: hmis-secrets
+              key: db_database
+

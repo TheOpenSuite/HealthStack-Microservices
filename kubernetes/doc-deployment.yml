@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: doc-service-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: doc-service
+  template:
+    metadata:
+      labels:
+        app: doc-service
+    spec:
+      containers:
+      - name: doc-service
+        image: "${DOCKER_USERNAME}/hmis-doc-service:${DOCKER_TAG:-latest}"
+        imagePullPolicy: Always 
+        env:
+        - name: DB_HOST
+          value: db-service
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: hmis-secrets
+              key: db_user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hmis-secrets
+              key: db_password
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: hmis-secrets
+              key: db_database
+
+

@@ -1,0 +1,52 @@
+terraform {
+  required_providers {
+    libvirt = {
+      source  = "dmacvicar/libvirt"
+      version = "0.7.1"
+    }
+  }
+}
+
+provider "libvirt" {
+  uri = "qemu:///system"
+}
+
+resource "libvirt_volume" "hmis_os_volume" {
+  name   = "hmis-os-volume"
+  source = "/var/lib/libvirt/images/ubuntu-22.04-server-cloudimg-amd64.img"
+}
+
+resource "libvirt_domain" "hmis_vm" {
+  name   = "hmis-server"
+  memory = 2048
+  vcpu   = 2
+
+  network_interface {
+    network_name = "default"
+  }
+
+  disk {
+    volume_id = libvirt_volume.hmis_os_volume.id
+  }
+
+  cloudinit = libvirt_cloudinit_template.commoninit.id
+}
+
+resource "libvirt_cloudinit_template" "commoninit" {
+  name      = "common-init"
+  user_data = <<-EOT
+    #cloud-config
+    hostname: hmis-server
+    users:
+      - name: ubuntu
+        sudo: ALL=(ALL) NOPASSWD:ALL
+        shell: /bin/bash
+        ssh_authorized_keys:
+          - ${file("~/.ssh/id_rsa.pub")}
+  EOT
+}
+
+output "hmis_server_ip" {
+  value = libvirt_domain.hmis_vm.network_interface[0].addresses[0]
+}
+

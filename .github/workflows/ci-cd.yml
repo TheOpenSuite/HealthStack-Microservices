@@ -1,0 +1,114 @@
+# This GitHub Actions workflow builds Docker images for each microservice,
+# runs security scans, and then triggers an Ansible playbook to deploy to a Kubernetes cluster.
+name: HMIS CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  pre_build_security_scan:
+    name: Pre-Build Static & Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Scan code for secrets with TruffleHog
+        uses: trufflesecurity/trufflehog@3b8d23cf19d8b42dd34428025cfab097b45e3a8e
+        with:
+          path: ./
+          base: ${{ github.event.before }}
+          head: ${{ github.sha }}
+          extra_args: --only-verified
+
+  build_and_scan_images:
+    name: Build, Scan, and Push Docker Images
+    needs: pre_build_security_scan
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [admin-service, auth-service, doc-service, pharmacy-service, reception-service]
+    outputs:
+      image_tag_short: ${{ steps.set_output.outputs.image_tag_short }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Define image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/hmis-${{ matrix.service }}
+          tags: |
+            type=sha,prefix=,format=short
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=inline
+          cache-to: type=inline
+
+      - name: Scan container image with Trivy
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8
+        with:
+          image-ref: ${{ steps.meta.outputs.tags }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Set image tag output for all services
+        id: set_output
+        run: echo "image_tag_short=${{ steps.meta.outputs.tags }}" >> $GITHUB_OUTPUT
+
+# This section is commented out because it was designed to deploy to a local
+# virtual machine which is not always on. 
+# If you are using this project, you can uncomment this section to enable 
+# automated deployment to your own local Kubernetes cluster. You will need
+# to configure the necessary GitHub secrets (SSH_PRIVATE_KEY and SERVER_IP),
+# or simply enjoy using the cloud!
+# deploy:
+#   name: Deploy to Kubernetes
+#   needs: build_and_scan_images
+#   runs-on: ubuntu-latest
+#   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+#   
+#   steps:
+#     - name: Checkout repository
+#       uses: actions/checkout@v4
+#
+#     - name: Set up SSH key
+#       uses: webfactory/ssh-agent@v0.9.0
+#       with:
+#         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+#
+#     - name: Install Ansible
+#       run: |
+#         sudo apt-get update
+#         sudo apt-get install -y ansible
+#
+#     - name: Run Ansible Playbook
+#       run: |
+#         ansible-playbook ansible/playbook.yml \
+#           -i "${{ secrets.SERVER_IP }}," \
+#           --extra-vars "image_tag=${{ needs.build_and_scan_images.outputs.image_tag_short }} docker_username=${{ secrets.DOCKERHUB_USERNAME }}"

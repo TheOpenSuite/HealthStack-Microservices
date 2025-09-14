@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+      - name: auth-service
+        image: "${DOCKER_USERNAME}/hmis-auth-service:${DOCKER_TAG:-latest}"
+        imagePullPolicy: Always 
+        env:
+        - name: DB_HOST
+          value: db-service
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: hmis-secrets
+              key: db_user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hmis-secrets
+              key: db_password
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: hmis-secrets
+              key: db_database
+

@@ -1,0 +1,51 @@
+# hmis-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hmis-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /auth/?(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 80
+      # Routes all requests starting with /reception/ to the reception service.
+      - path: /reception/?(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: reception-service
+            port:
+              number: 80
+      # Routes all requests starting with /admin/ to the admin service.
+      - path: /admin/?(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-service
+            port:
+              number: 80
+      # Routes all requests starting with /doc/ to the doctor service.
+      - path: /doc/?(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: doctor-service
+            port:
+              number: 80
+      # Routes all requests starting with /pharmacy/ to the pharmacy service.
+      - path: /pharmacy/?(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: pharmacy-service
+            port:
+              number: 80
+

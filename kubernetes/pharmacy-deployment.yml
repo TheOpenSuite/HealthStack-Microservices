@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pharmacy-service-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pharmacy-service
+  template:
+    metadata:
+      labels:
+        app: pharmacy-service
+    spec:
+      containers:
+      - name: pharmacy-service
+        image: "${DOCKER_USERNAME}/hmis-pharmacy-service:${DOCKER_TAG:-latest}"
+        imagePullPolicy: Always 
+        env:
+        - name: DB_HOST
+          value: db-service
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: hmis-secrets
+              key: db_user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hmis-secrets
+              key: db_password
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: hmis-secrets
+              key: db_database
+
