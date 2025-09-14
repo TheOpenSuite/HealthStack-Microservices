@@ -148,6 +148,8 @@ Admin Module Password: admin
 
 ---
 
-## **Credits**: The core framework and initial UI was designed by [MartMbithi](https://github.com/MartMbithi).
+## **Credits** 
+The core framework and initial UI was designed by [MartMbithi](https://github.com/MartMbithi).
+
 
 
